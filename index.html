@@ -251,6 +251,20 @@ nav .navdue .nd:hover{background:var(--gl)}
 .apt .portal input{max-width:none;width:min(440px,100%);flex:1 1 260px;font-size:calc(14px*var(--ts))}
 .apt .portal-row td{padding-top:0;padding-bottom:14px;border-top:0}
 .apt select,.apt input[type=date]{max-width:112px}
+/* ===== TO-DO PAGE styles ===== */
+.td{border:1px solid var(--bd,#ddd);border-radius:10px;margin:8px 0;background:var(--pn,transparent)}
+.td-h{display:flex;align-items:center;gap:10px;padding:8px 12px}
+.td-h input[type=text]{flex:1;min-width:0;border:0;background:transparent;font:inherit;padding:6px 4px}
+.td.done .td-h input[type=text]{text-decoration:line-through;opacity:.55}
+.td-ar{width:28px;height:28px;flex:none;border:0;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:6px}
+.td-ar:hover{background:var(--gl)}
+.td-ar i{width:8px;height:8px;border-right:2px solid var(--mu);border-bottom:2px solid var(--mu);transform:rotate(-45deg);display:block}
+.td.open .td-ar i{transform:rotate(45deg)}
+.td-b{display:none;padding:4px 16px 14px 50px}
+.td.open .td-b{display:block}
+.td-b textarea{min-height:6em}
+.td-due{font-size:.85em;opacity:.8}
+.td-late{color:#c0392b;font-weight:600}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" onerror="window.XLSX=null"></script>
 
@@ -327,7 +341,7 @@ function withPred(g){if(g.grade!=null||!S.pred||g.level!==12||g.status==='Comple
 
 // ===== APP STATE: everything you enter lives in S and is saved in this browser by save() / load(). f:{ont} = Ontario/All applicants switch on Application Data. =====
 let S={page:'dash',grades:[],apps:[],data:[],base:[],name:'',pred:true,f:{u:'',p:'',d:'',c:'',q:'',eng:false,g:'',sp:'',sort:'avgD',ont:'ont'},pg:1,msg:null,incl:true};
-function load(){try{S.grades=JSON.parse(localStorage.getItem('tfc:grades')||'[]');S.apps=JSON.parse(localStorage.getItem('tfc:apps')||'[]');S.ev=JSON.parse(localStorage.getItem('tfc:events')||'[]');S.t6=JSON.parse(localStorage.getItem('tfc:t6')||'{"mode":"auto","ids":[]}');S.psel=JSON.parse(localStorage.getItem('tfc:psel')||'{}');S.name=localStorage.getItem('tfc:name')||'';S.pred=JSON.parse(localStorage.getItem('tfc:pred')||'true');{const ec=JSON.parse(localStorage.getItem('tfc:ecs')||'[]'),cg=JSON.parse(localStorage.getItem('tfc:eccats')||'null');S.ecs=Array.isArray(ec)?ec.filter(x=>x&&typeof x==='object'&&x.id).map(x=>({id:String(x.id),t:String(x.t||'Untitled'),c:String(x.c||'Other'),y:String(x.y||''),b:String(x.b||''),ts:+x.ts||0})):[];S.eccats=Array.isArray(cg)&&cg.length?cg.map(String):ECDEF.slice();S.ecs.forEach(x=>{if(!S.eccats.includes(x.c))S.eccats.push(x.c)})}const d=JSON.parse(localStorage.getItem('tfc:data')||'[]');S.data=d.map(a=>({uni:a[0],prog:a[1],code:a[2],dec:a[3],avg:a[4],raw:a[5],app:a[6],dd:a[7],grp:a[8],cit:a[9],prov:a[10],supp:a[11],sn:a[12],com:a[13],eng:/engineer|mechatronic|engsci/i.test(a[1]+' '+a[2])})).map(cl);{const th=localStorage.getItem('tfc:theme');if(th==='d'||th==='dark')document.documentElement.dataset.theme='dark';else if(th==='l'||th==='light')document.documentElement.dataset.theme='light'}}catch(e){toast('Saved data could not be read.')}}
+function load(){try{S.todos=(()=>{try{const a=JSON.parse(localStorage.getItem('tfc:todos')||'[]');return Array.isArray(a)?a.filter(x=>x&&x.id).map(x=>({id:String(x.id),t:String(x.t||''),d:String(x.d||''),due:String(x.due||''),done:!!x.done,ts:+x.ts||0})):[]}catch(_){return[]}})();S.grades=JSON.parse(localStorage.getItem('tfc:grades')||'[]');S.apps=JSON.parse(localStorage.getItem('tfc:apps')||'[]');S.ev=JSON.parse(localStorage.getItem('tfc:events')||'[]');S.t6=JSON.parse(localStorage.getItem('tfc:t6')||'{"mode":"auto","ids":[]}');S.psel=JSON.parse(localStorage.getItem('tfc:psel')||'{}');S.name=localStorage.getItem('tfc:name')||'';S.pred=JSON.parse(localStorage.getItem('tfc:pred')||'true');{const ec=JSON.parse(localStorage.getItem('tfc:ecs')||'[]'),cg=JSON.parse(localStorage.getItem('tfc:eccats')||'null');S.ecs=Array.isArray(ec)?ec.filter(x=>x&&typeof x==='object'&&x.id).map(x=>({id:String(x.id),t:String(x.t||'Untitled'),c:String(x.c||'Other'),y:String(x.y||''),b:String(x.b||''),ts:+x.ts||0})):[];S.eccats=Array.isArray(cg)&&cg.length?cg.map(String):ECDEF.slice();S.ecs.forEach(x=>{if(!S.eccats.includes(x.c))S.eccats.push(x.c)})}const d=JSON.parse(localStorage.getItem('tfc:data')||'[]');S.data=d.map(a=>({uni:a[0],prog:a[1],code:a[2],dec:a[3],avg:a[4],raw:a[5],app:a[6],dd:a[7],grp:a[8],cit:a[9],prov:a[10],supp:a[11],sn:a[12],com:a[13],eng:/engineer|mechatronic|engsci/i.test(a[1]+' '+a[2])})).map(cl);{const th=localStorage.getItem('tfc:theme');if(th==='d'||th==='dark')document.documentElement.dataset.theme='dark';else if(th==='l'||th==='light')document.documentElement.dataset.theme='light'}}catch(e){toast('Saved data could not be read.')}}
 function save(k){try{const v=k==='data'?S.data.map(r=>[r.uni,r.prog,r.code,r.dec,r.avg,r.raw,r.app,r.dd,r.grp,r.cit,r.prov,r.supp,r.sn,r.com]):S[k];localStorage.setItem('tfc:'+(k==='ev'?'events':k),JSON.stringify(v));return true}catch(e){toast('Could not save \u2014 browser storage is full. Data stays until you close this tab.');return false}}
 function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',4500)}
 /* ---------- grades ---------- */
@@ -405,6 +419,10 @@ const ontData=()=>allData().filter(isOnt);
 // When the newest "v" changes, a popup shows ONE time (only the newest entry is shown; older ones are just a record).
 // ===================================================================
 const PATCHES=[
+{v:'1.6',d:'2026-11-18',t:'To-Do page',b:[
+'New To-Do page after Calendar. Type a task, click the arrow on the box to expand it for notes and a due date, then press Add.',
+'My Grades: with "I choose my own 6", the Top 6 box shows only the courses you picked. Tick "Top 6" in the course list to add one.',
+]},
 {v:'1.5',d:'2026-11-12',t:'More school details, chance check and linked activities',b:[
 'My Applications now shows, under your average, where it sits among Ontario applicants who got offers for that program (needs at least 5 reports).',
 'My Applications has an Activities button: tick which extracurriculars you will use for each supplementary application and copy them as text. The Extracurriculars page shows where each one is used.',
@@ -471,7 +489,7 @@ function setName(){const v=($('#wn').value||'').trim().replace(/\s+/g,' ').slice
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='wn')setName()});
 /* ---------- shell ---------- */
 // ===== SIDE PANEL ORDER + NAMES. Format  key:['Name shown',pageFunction]. Reorder by moving pairs; rename by editing the quoted name.  =====
-const PG={dash:['Dashboard',pDash],grades:['My Grades',pGrades],unis:['Universities',pUnis],progs:['Programs',pProgs],cmp:['Compare',pCmp],apps:['My Applications',pApps],ecs:['Extracurriculars',pEcs],data:['Application Data',pData],cal:['Calendar',pCal]};
+const PG={dash:['Dashboard',pDash],grades:['My Grades',pGrades],unis:['Universities',pUnis],progs:['Programs',pProgs],cmp:['Compare',pCmp],apps:['My Applications',pApps],ecs:['Extracurriculars',pEcs],data:['Application Data',pData],cal:['Calendar',pCal],todo:['To-Do',pTodo]};
 // ===== DRAW EVERYTHING: builds the side panel (names from PG + due dates + patch button) and the current page. =====
 function render(){document.body.classList.toggle('wel',!S.name);if(!S.name){$('#nav').innerHTML='';$('#app').innerHTML=pWelcome();const wn=$('#wn');if(wn)wn.focus();return}$('#nav').innerHTML='<div class="navlogo logo"><i></i>The Quad</div>'+Object.entries(PG).map(([k,v])=>`<button data-go="${k}" class="${S.page===k?'on':''}">${v[0]}</button>`).join('')+navBottom();$('#app').innerHTML=PG[S.page][1]();const dr=$('#drop');if(dr){const fi=$('#file');fi.onchange=()=>fi.files[0]&&readFile(fi.files[0]);dr.ondragover=e=>{e.preventDefault();dr.classList.add('ov')};dr.ondragleave=()=>dr.classList.remove('ov');dr.ondrop=e=>{e.preventDefault();dr.classList.remove('ov');e.dataTransfer.files[0]&&readFile(e.dataTransfer.files[0])}}const q=$('#q');if(q)q.oninput=()=>{S.f.q=q.value;S.pg=1;$('#tbl').innerHTML=tbl()};if(patchNew()&&!S.pmShown){S.pmShown=true;showPatchModal()}}
 const gid=t=>S.grades.find(g=>String(g.id)===t.dataset.id);
@@ -796,6 +814,23 @@ function ecAddCat(){const i=$('#ecNC'),v=(i.value||'').trim().replace(/\s+/g,' '
 ['input','change'].forEach(ev=>document.addEventListener(ev,e=>{const t=e.target,k=t.dataset&&t.dataset.ecf;if(k)S.ecd[k]=t.value;else if(ev==='change'&&t.dataset&&t.dataset.ecs!==undefined){S.ecsort=t.value;render()}}));
 document.addEventListener('keydown',e=>{const t=e.target;if(t.matches&&t.matches('.ec-h')&&(e.key==='Enter'||e.key===' ')){e.preventDefault();t.click()}else if(t.id==='ecNC'&&e.key==='Enter'){e.preventDefault();ecAddCat()}});
 document.addEventListener('toggle',e=>{if(e.target.dataset&&e.target.dataset.ecdet!==undefined)S.ecmc=e.target.open},true);
+// ===== TO-DO PAGE: type a task and press Enter (or Add). Click the arrow on the right of a task to open it and write more info and a due date. Saved in tfc:todos. =====
+S.tdopen=S.tdopen||{};S.tdf=S.tdf||'all';
+function tdRow(x){const o=!!S.tdopen[x.id],late=x.due&&!x.done&&x.due<todayS();
+return `<div class="td${x.done?' done':''}${o?' open':''}" data-tid="${esc(x.id)}"><div class="td-h"><input type="checkbox" data-td="done" ${x.done?'checked':''} aria-label="Mark done"><input type="text" data-td="title" value="${esc(x.t)}" aria-label="Task">${x.due?`<span class="td-due${late?' td-late':''}">${late?'Overdue · ':''}${esc(x.due)}</span>`:''}${x.d?'<span class="td-due" title="Has notes">≡</span>':''}<button class="td-ar" data-td="tog" aria-expanded="${o}" aria-label="Expand task"><i></i></button></div><div class="td-b"><label class="note">Due date <input type="date" data-td="due" value="${esc(x.due)}"></label><p class="note" style="margin:10px 0 4px">More info</p><textarea data-td="notes" placeholder="Add details, steps, links...">${esc(x.d)}</textarea><div class="row" style="margin-top:8px"><button class="dng" data-td="del">Delete task</button></div></div></div>`}
+function pTodo(){const L=S.todos,f=S.tdf,sh=L.filter(x=>f==='all'||(f==='open'?!x.done:x.done)),op=L.filter(x=>!x.done).length;
+return `<h1>To-Do</h1><div class="pnl td${S.tdnO?' open':''}" id="tdBox"><div class="td-h" style="padding:0"><input id="tdNew" type="text" placeholder="Write a task and press Enter" style="flex:1;min-width:200px"><button class="td-ar" data-td="newtog" aria-expanded="${!!S.tdnO}" aria-label="Expand to add more info"><i></i></button><button class="pri" data-td="add">Add</button></div><div class="td-b" style="padding:10px 0 0"><label class="note">Due date <input type="date" id="tdNewDue"></label><p class="note" style="margin:10px 0 4px">More info</p><textarea id="tdNewD" placeholder="Add details, steps, links..."></textarea></div></div><div class="row" style="margin:10px 0;align-items:center">${[['all','All'],['open','Open'],['done','Done']].map(([k,n])=>`<button data-td="flt" data-f="${k}" class="${f===k?'pri':''}">${n}</button>`).join('')}<span class="note">${op} open · ${L.length-op} done</span>${L.some(x=>x.done)?'<button data-td="clr">Clear done</button>':''}</div>${sh.length?sh.map(tdRow).join(''):`<p class="note">${L.length?'Nothing in this view.':'No tasks yet. Add your first one above.'}</p>`}`}
+function tdAdd(){const i=$('#tdNew'),v=(i.value||'').trim().replace(/\s+/g,' ');if(!v)return toast('Write a task first.');S.todos.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),t:v,d:($('#tdNewD').value||'').replace(/\s+$/,''),due:$('#tdNewDue').value||'',done:false,ts:Date.now()});save('todos');render();const n=$('#tdNew');if(n)n.focus()}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-td]');if(!t)return;const a=t.dataset.td,r=t.closest('[data-tid]'),id=r&&r.dataset.tid;
+if(a==='add')return tdAdd();
+if(a==='newtog'){const bx=$('#tdBox'),o=!bx.classList.contains('open');bx.classList.toggle('open',o);t.setAttribute('aria-expanded',o);S.tdnO=o;if(o)$('#tdNewD').focus();return}
+if(a==='flt'){S.tdf=t.dataset.f;render();return}
+if(a==='clr'){if(!sure(t))return;S.todos=S.todos.filter(x=>!x.done);save('todos');render();return}
+if(a==='tog'&&r){const o=!r.classList.contains('open');r.classList.toggle('open',o);t.setAttribute('aria-expanded',o);if(o)S.tdopen[id]=1;else delete S.tdopen[id];return}
+if(a==='del'&&r){if(!sure(t))return;S.todos=S.todos.filter(x=>x.id!==id);delete S.tdopen[id];save('todos');render()}});
+document.addEventListener('input',e=>{const t=e.target,a=t.dataset&&t.dataset.td;if(!a)return;const x=S.todos.find(z=>z.id===(t.closest('[data-tid]')||{dataset:{}}).dataset.tid);if(!x)return;if(a==='title'){x.t=t.value;save('todos')}else if(a==='notes'){x.d=t.value;save('todos')}});
+document.addEventListener('change',e=>{const t=e.target,a=t.dataset&&t.dataset.td;if(!a)return;const x=S.todos.find(z=>z.id===(t.closest('[data-tid]')||{dataset:{}}).dataset.tid);if(!x)return;if(a==='done'){x.done=t.checked;save('todos');render()}else if(a==='due'){x.due=t.value;save('todos');render()}});
+document.addEventListener('keydown',e=>{if(e.target.id==='tdNew'&&e.key==='Enter'){e.preventDefault();tdAdd()}});
 // ===== START UP: sets today as the calendar date, loads the spreadsheet rows into S.base, loads your saved data, draws the page. =====
 S.evd=todayS();
 S.base=BASE.map(a=>cl({uni:a[0],prog:a[1],code:a[2],dec:a[3],avg:a[4],raw:a[5],app:a[6],dd:a[7],grp:a[8],cit:a[9],prov:a[10],supp:a[11],sn:a[12],com:a[13],eng:false}));
