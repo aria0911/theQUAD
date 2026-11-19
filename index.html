@@ -784,8 +784,8 @@ const CH_MIN=5;
 const dmKey=p=>{const k=p.uid==='uwo'?'we':p.uid;return DM[k]?k:null};
 function chance(p,av){const k=dmKey(p);if(!k)return'<span class="note">No applicant data for this school yet</span>';const st=pstat(k,p.name),n=st?st.av.length:0;
 if(n<CH_MIN)return`<span class="note">Not enough reports (${n} offer${n===1?'':'s'})</span>`;if(av.avg==null)return'<span class="note">Add grades to compare</span>';
-const my=av.avg,pc=Math.round(100*st.av.filter(x=>x<=my).length/n),cls=pc>=60?'ok':pc>=25?'wt':'no';
-return`<span class="tag ${cls}">At or above ${pc}% of offers</span><div class="note">${n} Ontario offers · average ${f1(mean(st.av))} · you're at ${f1(my)}, ${Math.abs(my-mean(st.av))<0.05?'right at the average':f1(Math.abs(my-mean(st.av))).replace('%','')+' pts '+(my>mean(st.av)?'above':'below')+' the average'} · range ${st.lo}–${st.hi}%</div>`}
+const my=av.avg,q1=(()=>{const a=st.av,h=(a.length-1)*0.25,l=Math.floor(h);return a[l]+(a[Math.min(l+1,a.length-1)]-a[l])*(h-l)})(),pc=Math.round(100*st.av.filter(x=>x<=my).length/n),cls=pc>=60?'ok':pc>=25?'wt':'no';
+return`<span class="tag ${cls}">At or above ${pc}% of offers</span><div class="note">${n} Ontario offers · low end ${f1(q1)} (bottom quarter of offers) · lowest ${f1(st.lo)} · you're at ${f1(my)}, ${Math.abs(my-q1)<0.05?'right at the low end':f1(Math.abs(my-q1)).replace('%','')+' pts '+(my>q1?'above':'below')+' the low end'}</div>`}
 // ===== APPLICATION PORTAL LINK (My Applications): each application can store the web address of the school's application portal. Only http/https links are accepted. =====
 const cleanUrl=t=>{t=String(t||'').trim();if(!t)return'';if(!/^https?:\/\//i.test(t))t='https://'+t;try{const u=new URL(t);return/^https?:$/.test(u.protocol)&&u.hostname.includes('.')?u.href:''}catch(_){return''}};
 // ===== LINK ACTIVITIES TO APPLICATIONS (My Applications -> "Activities" button). Choices are saved in each application as a.ecs. =====
