@@ -285,6 +285,22 @@ nav .navdue .nd:hover{background:var(--gl)}
 .sa-ed:empty:before{content:attr(data-ph);color:var(--mu)}
 .sa-ed b,.sa-ed strong{font-weight:800}
 .sa-ed ul{margin:6px 0 6px 22px;padding:0}
+/* Selected-text word count: appears only while text inside a Supp Apps editor is selected. */
+.sa-selection-count{position:fixed;z-index:1000;display:none;pointer-events:none;padding:6px 10px;border:1px solid var(--glb);border-radius:999px;background:var(--pn);color:var(--ink);box-shadow:0 5px 18px rgba(0,0,0,.16);font-size:12px;font-weight:700;white-space:nowrap}
+/* Expandable extracurricular references inside each supplementary-application workspace. */
+.sa-refs{margin:2px 0 14px;padding:12px;border:1px solid var(--glb);border-radius:12px;background:var(--gl2)}
+.sa-refs-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;font-weight:700}
+.sa-refs-count{font-size:12px;color:var(--mu);font-weight:500;white-space:nowrap}
+.sa-ref{border:1px solid var(--glb);border-radius:9px;background:var(--pn);margin-top:7px;overflow:hidden}
+.sa-ref summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;cursor:pointer;list-style:none}
+.sa-ref summary::-webkit-details-marker{display:none}
+.sa-ref summary:after{content:'+';color:var(--mu);font-size:17px;font-weight:600}
+.sa-ref[open] summary:after{content:'−'}
+.sa-ref-meta{color:var(--mu);font-size:12px;font-weight:500;text-align:right}
+.sa-ref-body{padding:0 12px 12px;border-top:1px solid var(--glb);font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.sa-ref-body p{margin:8px 0}
+.sa-ref-body ul{margin:7px 0 4px 20px;padding:0}
+.sa-refs-empty{color:var(--mu);font-size:13px;margin:0}
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" onerror="window.XLSX=null"></script>
@@ -514,7 +530,7 @@ function setName(){const v=($('#wn').value||'').trim().replace(/\s+/g,' ').slice
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='wn')setName()});
 /* ---------- shell ---------- */
 // ===== SIDE PANEL ORDER + NAMES. Format  key:['Name shown',pageFunction]. Reorder by moving pairs; rename by editing the quoted name.  =====
-const PG={dash:['Dashboard',pDash],grades:['My Grades',pGrades],unis:['Universities',pUnis],progs:['Programs',pProgs],cmp:['Compare',pCmp],apps:['My Applications',pApps],ecs:['Extracurriculars',pEcs],supp:['Supplementary Applications',pSupp],data:['Application Data',pData],cal:['Calendar',pCal],todo:['To-Do',pTodo]};
+const PG={dash:['Dashboard',pDash],grades:['My Grades',pGrades],unis:['Universities',pUnis],progs:['Programs',pProgs],cmp:['Compare',pCmp],apps:['My Applications',pApps],ecs:['Extracurriculars',pEcs],supp:['Supp Apps',pSupp],data:['Application Data',pData],cal:['Calendar',pCal],todo:['To-Do',pTodo]};
 // ===== DRAW EVERYTHING: builds the side panel (names from PG + due dates + patch button) and the current page. =====
 function render(){document.body.classList.toggle('wel',!S.name);if(!S.name){$('#nav').innerHTML='';$('#app').innerHTML=pWelcome();const wn=$('#wn');if(wn)wn.focus();return}$('#nav').innerHTML='<div class="navlogo logo"><i></i>The Quad</div>'+Object.entries(PG).map(([k,v])=>`<button data-go="${k}" class="${S.page===k?'on':''}">${v[0]}</button>`).join('')+navBottom();$('#app').innerHTML=PG[S.page][1]();const dr=$('#drop');if(dr){const fi=$('#file');fi.onchange=()=>fi.files[0]&&readFile(fi.files[0]);dr.ondragover=e=>{e.preventDefault();dr.classList.add('ov')};dr.ondragleave=()=>dr.classList.remove('ov');dr.ondrop=e=>{e.preventDefault();dr.classList.remove('ov');e.dataTransfer.files[0]&&readFile(e.dataTransfer.files[0])}}const q=$('#q');if(q)q.oninput=()=>{S.f.q=q.value;S.pg=1;$('#tbl').innerHTML=tbl()};if(patchNew()&&!S.pmShown){S.pmShown=true;showPatchModal()}}
 const gid=t=>S.grades.find(g=>String(g.id)===t.dataset.id);
@@ -900,6 +916,10 @@ function suppClean(html){const doc=new DOMParser().parseFromString('<body>'+html
   if(!ok.has(c.tagName)){if(/^(SCRIPT|STYLE)$/.test(c.tagName)){c.remove();return}w(c);c.replaceWith(...c.childNodes);return}
   [...c.attributes].forEach(a=>c.removeAttribute(a.name));w(c)})})(doc.body);return doc.body.innerHTML}
 const suppWords=el=>(el.innerText||'').trim().split(/\s+/).filter(Boolean).length;
+// Return the unique extracurriculars selected for supplementary-app applications at this university.
+function suppActivities(uid){const ids=[];S.apps.forEach(a=>{const p=a.pid&&pById(a.pid);if(!p||p.uid!==uid)return;const au=suppYN(p)[0],yn=a.sov==='Yes'||a.sov==='No'?a.sov:au;if(yn==='No')return;(a.ecs||[]).forEach(id=>{if(!ids.includes(id))ids.push(id)})});return ids.map(id=>S.ecs.find(e=>e.id===id)).filter(Boolean)}
+function suppActivityRefs(uid){const L=suppActivities(uid);return`<div class=\"sa-refs\"><div class=\"sa-refs-head\"><span>Activity references</span><span class=\"sa-refs-count\">${L.length} selected</span></div>${L.length?L.map(e=>`<details class=\"sa-ref\"><summary><b>${esc(e.t)}</b><span class=\"sa-ref-meta\">${esc(e.c)}${e.y?' · '+esc(e.y):''}</span></summary><div class=\"sa-ref-body\">${ecBody(e.b)}</div></details>`).join(''):'<p class=\"sa-refs-empty\">No activities selected for this university yet. Choose activities using the Activities button beside the relevant application in My Applications.</p>'}</div>`}
+function suppSelectionCount(){let pill=document.getElementById('sa-selection-count');if(!pill){pill=document.createElement('div');pill.id='sa-selection-count';pill.className='sa-selection-count';pill.setAttribute('aria-live','polite');document.body.appendChild(pill)}const sel=window.getSelection();if(!sel||sel.isCollapsed||!sel.rangeCount){pill.style.display='none';return}const a=sel.anchorNode,f=sel.focusNode,ed=a&&(a.nodeType===1?a:a.parentElement)?.closest('.sa-ed');if(!ed||!ed.contains(a)||!ed.contains(f)){pill.style.display='none';return}const selected=(sel.toString()||'').trim();if(!selected){pill.style.display='none';return}const n=selected.split(/\s+/).filter(Boolean).length,rect=sel.getRangeAt(0).getBoundingClientRect();pill.textContent=`${n} selected word${n===1?'':'s'}`;pill.style.display='block';const w=pill.offsetWidth,h=pill.offsetHeight;let left=rect.left+rect.width/2-w/2,top=rect.top-h-9;if(top<6)top=rect.bottom+9;left=Math.max(6,Math.min(left,window.innerWidth-w-6));top=Math.max(6,Math.min(top,window.innerHeight-h-6));pill.style.left=left+'px';pill.style.top=top+'px'}
 function suppSave(ed){const card=ed.closest('.sa');if(!card)return;const D=suppGet();D[card.dataset.said]=suppClean(ed.innerHTML);
  try{localStorage.setItem('tfc:supp',JSON.stringify(D))}catch(_){toast('Could not save \u2014 browser storage is full.')}
  const wc=card.querySelector('.sa-wc');if(wc)wc.textContent=suppWords(ed)+' words'}
@@ -910,6 +930,7 @@ function pSupp(){const by={};
 ${ids.length?ids.map(id=>{const g=by[id],html=suppClean(D[id]||''),shut=!!S.saShut[id],tmp=document.createElement('div');tmp.innerHTML=html;
  return`<div class="sa ${shut?'':'open'}" data-said="${esc(id)}"><div class="sa-h" role="button" tabindex="0" aria-expanded="${!shut}" data-sa="tog"><span class="sa-ch" aria-hidden="true"></span><div class="sa-m"><div class="sa-t">${esc(g.uni)}</div><div class="sa-p">${esc(g.ps.join(' \u00b7 '))}</div></div><span class="sa-wc">${suppWords(tmp)} words</span></div>
 <div class="sa-b"><div class="sa-tb"><button data-sa="bold" title="Bold (Ctrl+B)" aria-label="Bold"><b>B</b></button><button data-sa="ital" title="Italic (Ctrl+I)" aria-label="Italic"><i>I</i></button><button data-sa="ul" title="Bulleted list" aria-label="Bulleted list">\u2022 List</button></div>
+${suppActivityRefs(id)}
 <div class="sa-ed" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Supplementary application notes for ${esc(g.uni)}" data-ph="Paste the supplementary questions here, bold them, then write your answers underneath.">${html}</div></div></div>`}).join(''):'<div class="pnl"><p class="note">No supplementary applications yet. Add programs on My Applications. Any program whose \u201cSupp app?\u201d is not \u201cNo\u201d gets a box here automatically.</p></div>'}`}
 document.addEventListener('mousedown',e=>{const b=e.target.closest('[data-sa]');if(b&&b.dataset.sa!=='tog')e.preventDefault()});
 document.addEventListener('click',e=>{const t=e.target.closest('[data-sa]');if(!t)return;const a=t.dataset.sa,c=t.closest('.sa');if(!c)return;
@@ -920,6 +941,12 @@ let saTimer=0;
 document.addEventListener('input',e=>{const ed=e.target.closest&&e.target.closest('.sa-ed');if(!ed)return;clearTimeout(saTimer);saTimer=setTimeout(()=>suppSave(ed),400)});
 document.addEventListener('focusout',e=>{const ed=e.target.closest&&e.target.closest('.sa-ed');if(ed){clearTimeout(saTimer);suppSave(ed)}});
 document.addEventListener('paste',e=>{const ed=e.target.closest&&e.target.closest('.sa-ed');if(!ed)return;e.preventDefault();document.execCommand('insertText',false,(e.clipboardData||window.clipboardData).getData('text/plain'))});
+// Count only the highlighted words when the selection is fully inside a Supp Apps answer editor.
+document.addEventListener('selectionchange',suppSelectionCount);
+document.addEventListener('mouseup',suppSelectionCount);
+document.addEventListener('keyup',suppSelectionCount);
+window.addEventListener('scroll',suppSelectionCount,true);
+window.addEventListener('resize',suppSelectionCount);
 // ===== START UP: sets today as the calendar date, loads the spreadsheet rows into S.base, loads your saved data, draws the page. =====
 S.evd=todayS();
 S.base=BASE.map(a=>cl({uni:a[0],prog:a[1],code:a[2],dec:a[3],avg:a[4],raw:a[5],app:a[6],dd:a[7],grp:a[8],cit:a[9],prov:a[10],supp:a[11],sn:a[12],com:a[13],eng:false}));
