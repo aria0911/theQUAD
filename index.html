@@ -265,6 +265,27 @@ nav .navdue .nd:hover{background:var(--gl)}
 .td-b textarea{min-height:6em}
 .td-due{font-size:.85em;opacity:.8}
 .td-late{color:#c0392b;font-weight:600}
+/* v10: Supp Apps editor */
+.sa{border:1px solid var(--glb);background:var(--gl2);border-radius:16px;margin-bottom:14px;overflow:hidden}
+.sa-h{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer}
+.sa-h:hover{background:var(--gl)}
+.sa-h:focus-visible{outline:2px solid var(--em);outline-offset:-2px}
+.sa-ch{width:8px;height:8px;border-right:2px solid var(--mu);border-bottom:2px solid var(--mu);transform:rotate(-45deg);flex:none}
+.sa.open .sa-ch{transform:rotate(45deg)}
+.sa-m{flex:1;min-width:0}
+.sa-t{font-weight:700;font-size:calc(16.5px*var(--ts))}
+.sa-p{color:var(--mu);font-size:calc(13.5px*var(--ts));overflow-wrap:anywhere}
+.sa-wc{color:var(--mu);font-size:calc(13px*var(--ts));white-space:nowrap}
+.sa-b{display:none;padding:0 16px 16px;border-top:1px solid var(--glb)}
+.sa.open .sa-b{display:block}
+.sa-tb{display:flex;gap:6px;padding:10px 0}
+.sa-tb button{min-width:38px}
+.sa-ed{min-height:16em;padding:14px 16px;border:1px solid var(--bd);border-radius:12px;background:var(--pn);color:var(--ink);line-height:1.65;font-size:calc(15.5px*var(--ts));overflow-wrap:anywhere;outline:none}
+.sa-ed:focus{outline:2px solid var(--em)}
+.sa-ed:empty:before{content:attr(data-ph);color:var(--mu)}
+.sa-ed b,.sa-ed strong{font-weight:800}
+.sa-ed ul{margin:6px 0 6px 22px;padding:0}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" onerror="window.XLSX=null"></script>
 
@@ -418,8 +439,11 @@ const ontData=()=>allData().filter(isOnt);
 // Add a new entry at the TOP of this list. Fields: v = version, d = date, t = title, b = bullet points.
 // When the newest "v" changes, a popup shows ONE time (only the newest entry is shown; older ones are just a record).
 // ===================================================================
-const PATCHES=[
-{v:'1.6',d:'2026-11-18',t:'To-Do page',b:[
+const PATCHES=[ 
+ {v:'1.7',d:'2026-11-21',t:'Supp Apps page and offer celebration',b:[
+'New Supp Apps page: one expandable box per university with a supplementary application, with bold, italic and bullets.',
+'Setting an application to Offer now shows a congratulations message with fireworks for 5 seconds.']},
+ {v:'1.6',d:'2026-11-18',t:'To-Do page',b:[
 'New To-Do page after Calendar. Type a task, click the arrow on the box to expand it for notes and a due date, then press Add.',
 'My Grades: with "I choose my own 6", the Top 6 box shows only the courses you picked. Tick "Top 6" in the course list to add one.', 
  'When grades are compared to yours in the My Application page it chooses the lower or bottom 50% of average because submitted application data is highly inflated'
@@ -490,7 +514,7 @@ function setName(){const v=($('#wn').value||'').trim().replace(/\s+/g,' ').slice
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='wn')setName()});
 /* ---------- shell ---------- */
 // ===== SIDE PANEL ORDER + NAMES. Format  key:['Name shown',pageFunction]. Reorder by moving pairs; rename by editing the quoted name.  =====
-const PG={dash:['Dashboard',pDash],grades:['My Grades',pGrades],unis:['Universities',pUnis],progs:['Programs',pProgs],cmp:['Compare',pCmp],apps:['My Applications',pApps],ecs:['Extracurriculars',pEcs],data:['Application Data',pData],cal:['Calendar',pCal],todo:['To-Do',pTodo]};
+const PG={dash:['Dashboard',pDash],grades:['My Grades',pGrades],unis:['Universities',pUnis],progs:['Programs',pProgs],cmp:['Compare',pCmp],apps:['My Applications',pApps],ecs:['Extracurriculars',pEcs],supp:['Supp Apps',pSupp],data:['Application Data',pData],cal:['Calendar',pCal],todo:['To-Do',pTodo]};
 // ===== DRAW EVERYTHING: builds the side panel (names from PG + due dates + patch button) and the current page. =====
 function render(){document.body.classList.toggle('wel',!S.name);if(!S.name){$('#nav').innerHTML='';$('#app').innerHTML=pWelcome();const wn=$('#wn');if(wn)wn.focus();return}$('#nav').innerHTML='<div class="navlogo logo"><i></i>The Quad</div>'+Object.entries(PG).map(([k,v])=>`<button data-go="${k}" class="${S.page===k?'on':''}">${v[0]}</button>`).join('')+navBottom();$('#app').innerHTML=PG[S.page][1]();const dr=$('#drop');if(dr){const fi=$('#file');fi.onchange=()=>fi.files[0]&&readFile(fi.files[0]);dr.ondragover=e=>{e.preventDefault();dr.classList.add('ov')};dr.ondragleave=()=>dr.classList.remove('ov');dr.ondrop=e=>{e.preventDefault();dr.classList.remove('ov');e.dataTransfer.files[0]&&readFile(e.dataTransfer.files[0])}}const q=$('#q');if(q)q.oninput=()=>{S.f.q=q.value;S.pg=1;$('#tbl').innerHTML=tbl()};if(patchNew()&&!S.pmShown){S.pmShown=true;showPatchModal()}}
 const gid=t=>S.grades.find(g=>String(g.id)===t.dataset.id);
@@ -746,7 +770,7 @@ else if(a==='mkics'){S.ics=ics();render()}
 else if(a==='copy'){const b=document.getElementById(t.dataset.src);b.select();(navigator.clipboard?navigator.clipboard.writeText(b.value):Promise.reject()).then(()=>toast('Copied.')).catch(()=>toast('Select the text and copy it with Ctrl+C.'))}});
 document.addEventListener('change',e=>{const t=e.target.closest('[data-x]');if(!t)return;const x=t.dataset.x,v=t.value,i=+t.dataset.i,ap=S.apps.find(a=>String(a.id)===t.dataset.id);
 if(x==='evd'){if(v){S.evd=v;S.cal={y:+v.slice(0,4),m:+v.slice(5,7)-1}}}else if(x==='pfu')S.pf.u=v;else if(x==='pfs')S.pf.s=v;else if(x==='pff')S.pf.f=v;else if(x==='uff')S.uf=v;else if(x==='cu')S.cmp[i]={u:v,p:''};else if(x==='cp')S.cmp[i].p=v;else if(x==='nau')S.na={u:v,p:''};else if(x==='nap')S.na.p=v;
-else if(ap){if(x==='ast')ap.status=v;else if(x==='adl')ap.deadline=v;else if(x==='asp')ap.supp=v;else if(x==='asst')ap.sst=v;else if(x==='asov')ap.sov=v;else if(x==='aportal'){const u=cleanUrl(v);if(v.trim()&&!u){toast('That does not look like a web link. Try something like https://school.ca/portal');render()}else ap.portal=u}save('apps')}
+else if(ap){if(x==='ast'){const was=ap.status;ap.status=v;if(v==='Offer'&&was!=='Offer'){const p=pById(ap.pid);celebrate(p?p.uns+': '+p.name:'')}};else if(x==='adl')ap.deadline=v;else if(x==='asp')ap.supp=v;else if(x==='asst')ap.sst=v;else if(x==='asov')ap.sov=v;else if(x==='aportal'){const u=cleanUrl(v);if(v.trim()&&!u){toast('That does not look like a web link. Try something like https://school.ca/portal');render()}else ap.portal=u}save('apps')}
 render()});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('.cd[data-do]')){e.preventDefault();e.target.click()}});
 document.addEventListener('input',e=>{const t=e.target;if(t.id!=='uq'&&t.id!=='pq')return;if(t.id==='uq')S.uq=t.value;else S.pf.q=t.value;render();const n=document.getElementById(t.id);n.focus();n.setSelectionRange(n.value.length,n.value.length)});
@@ -832,6 +856,70 @@ if(a==='del'&&r){if(!sure(t))return;S.todos=S.todos.filter(x=>x.id!==id);delete 
 document.addEventListener('input',e=>{const t=e.target,a=t.dataset&&t.dataset.td;if(!a)return;const x=S.todos.find(z=>z.id===(t.closest('[data-tid]')||{dataset:{}}).dataset.tid);if(!x)return;if(a==='title'){x.t=t.value;save('todos')}else if(a==='notes'){x.d=t.value;save('todos')}});
 document.addEventListener('change',e=>{const t=e.target,a=t.dataset&&t.dataset.td;if(!a)return;const x=S.todos.find(z=>z.id===(t.closest('[data-tid]')||{dataset:{}}).dataset.tid);if(!x)return;if(a==='done'){x.done=t.checked;save('todos');render()}else if(a==='due'){x.due=t.value;save('todos');render()}});
 document.addEventListener('keydown',e=>{if(e.target.id==='tdNew'&&e.key==='Enter'){e.preventDefault();tdAdd()}});
+// ===== CELEBRATION: congrats + fireworks when an application is set to "Offer". Closes itself after 5 seconds (click or Esc closes it sooner). =====
+function celebrate(label){
+ if(document.querySelector('.celeb'))return;
+ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const o=document.createElement('div');o.className='celeb';
+ o.setAttribute('role','dialog');o.setAttribute('aria-label','Congratulations');
+ o.style.cssText='position:fixed;inset:0;z-index:40;display:grid;place-items:center;background:rgba(0,0,0,.6);padding:20px';
+ o.innerHTML=`<canvas style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas>
+ <div class="pnl" style="position:relative;max-width:460px;text-align:center;margin:0;background:var(--pn)">
+ <h2 class="h2" style="margin-top:0">Congratulations${S.name?', '+esc(S.name):''}! 🎉</h2>
+ <p style="margin:0">${label?'You got an offer from <b>'+esc(label)+'</b>.':'You got an offer!'} Your hard work paid off.</p></div>`;
+ document.body.appendChild(o);
+ let raf=0,done=false,timer=0;
+ const onKey=e=>{if(e.key==='Escape')close()};
+ const close=()=>{if(done)return;done=true;clearTimeout(timer);cancelAnimationFrame(raf);document.removeEventListener('keydown',onKey);o.remove()};
+ document.addEventListener('keydown',onKey);
+ o.onclick=close;
+ timer=setTimeout(close,5000);
+ if(reduce)return;
+ const cv=o.querySelector('canvas'),ctx=cv.getContext('2d'),dpr=window.devicePixelRatio||1,W=innerWidth,H=innerHeight;
+ cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+ const parts=[],t0=performance.now();let last=-999;
+ const burst=()=>{const x=W*(.15+Math.random()*.7),y=H*(.12+Math.random()*.4),h=Math.random()*360;
+  for(let i=0;i<70;i++){const a=Math.random()*6.283,s=Math.random()*5+1;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:1,h:h+Math.random()*30})}};
+ const frame=t=>{if(done)return;const el=t-t0;
+  ctx.globalCompositeOperation='destination-out';ctx.fillStyle='rgba(0,0,0,.18)';ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+  if(el<3800&&el-last>450){burst();last=el}
+  for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.x+=p.vx;p.y+=p.vy;p.vy+=.05;p.vx*=.985;p.vy*=.985;p.l-=.011;
+   if(p.l<=0){parts.splice(i,1);continue}
+   ctx.fillStyle=`hsla(${p.h},100%,60%,${p.l})`;ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,6.283);ctx.fill()}
+  raf=requestAnimationFrame(frame)};
+ raf=requestAnimationFrame(frame);
+}
+
+// ===== SUPP APPS PAGE: one rich-text box per university that has a supplementary application.
+// A program shows up here when it is in My Applications and its "Supp app?" is not "No". Text is saved in this browser (tfc:supp). =====
+S.saShut=S.saShut||{};
+function suppGet(){if(!S.suppd){try{const d=JSON.parse(localStorage.getItem('tfc:supp')||'{}');S.suppd=d&&typeof d==='object'&&!Array.isArray(d)?d:{}}catch(_){S.suppd={}}}return S.suppd}
+function suppClean(html){const doc=new DOMParser().parseFromString('<body>'+html,'text/html'),ok=new Set(['B','STRONG','I','EM','U','BR','DIV','P','UL','OL','LI']);
+ (function w(n){[...n.childNodes].forEach(c=>{if(c.nodeType===3)return;if(c.nodeType!==1){c.remove();return}
+  if(!ok.has(c.tagName)){if(/^(SCRIPT|STYLE)$/.test(c.tagName)){c.remove();return}w(c);c.replaceWith(...c.childNodes);return}
+  [...c.attributes].forEach(a=>c.removeAttribute(a.name));w(c)})})(doc.body);return doc.body.innerHTML}
+const suppWords=el=>(el.innerText||'').trim().split(/\s+/).filter(Boolean).length;
+function suppSave(ed){const card=ed.closest('.sa');if(!card)return;const D=suppGet();D[card.dataset.said]=suppClean(ed.innerHTML);
+ try{localStorage.setItem('tfc:supp',JSON.stringify(D))}catch(_){toast('Could not save \u2014 browser storage is full.')}
+ const wc=card.querySelector('.sa-wc');if(wc)wc.textContent=suppWords(ed)+' words'}
+function pSupp(){const by={};
+ S.apps.forEach(a=>{const p=a.pid&&pById(a.pid);if(!p)return;const au=suppYN(p)[0],yn=a.sov==='Yes'||a.sov==='No'?a.sov:au;if(yn==='No')return;const g=by[p.uid]=by[p.uid]||{uni:p.uni,ps:[]};if(!g.ps.includes(p.name))g.ps.push(p.name)});
+ const ids=Object.keys(by),D=suppGet();
+ return`<h1>Supplementary Applications</h1><p class="sub">One box for each university that asks for a supplementary application. Paste the questions in, bold them with the <b>B</b> button (or Ctrl+B), and write your answers under each one. Click a box title to expand or minimize it. Everything saves automatically in this browser.</p>
+${ids.length?ids.map(id=>{const g=by[id],html=suppClean(D[id]||''),shut=!!S.saShut[id],tmp=document.createElement('div');tmp.innerHTML=html;
+ return`<div class="sa ${shut?'':'open'}" data-said="${esc(id)}"><div class="sa-h" role="button" tabindex="0" aria-expanded="${!shut}" data-sa="tog"><span class="sa-ch" aria-hidden="true"></span><div class="sa-m"><div class="sa-t">${esc(g.uni)}</div><div class="sa-p">${esc(g.ps.join(' \u00b7 '))}</div></div><span class="sa-wc">${suppWords(tmp)} words</span></div>
+<div class="sa-b"><div class="sa-tb"><button data-sa="bold" title="Bold (Ctrl+B)" aria-label="Bold"><b>B</b></button><button data-sa="ital" title="Italic (Ctrl+I)" aria-label="Italic"><i>I</i></button><button data-sa="ul" title="Bulleted list" aria-label="Bulleted list">\u2022 List</button></div>
+<div class="sa-ed" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Supplementary application notes for ${esc(g.uni)}" data-ph="Paste the supplementary questions here, bold them, then write your answers underneath.">${html}</div></div></div>`}).join(''):'<div class="pnl"><p class="note">No supplementary applications yet. Add programs on My Applications. Any program whose \u201cSupp app?\u201d is not \u201cNo\u201d gets a box here automatically.</p></div>'}`}
+document.addEventListener('mousedown',e=>{const b=e.target.closest('[data-sa]');if(b&&b.dataset.sa!=='tog')e.preventDefault()});
+document.addEventListener('click',e=>{const t=e.target.closest('[data-sa]');if(!t)return;const a=t.dataset.sa,c=t.closest('.sa');if(!c)return;
+ if(a==='tog'){const o=!c.classList.contains('open');c.classList.toggle('open',o);t.setAttribute('aria-expanded',o);if(o)delete S.saShut[c.dataset.said];else S.saShut[c.dataset.said]=1;return}
+ const ed=c.querySelector('.sa-ed');ed.focus();document.execCommand(a==='bold'?'bold':a==='ital'?'italic':'insertUnorderedList');suppSave(ed)});
+document.addEventListener('keydown',e=>{if(e.target.matches&&e.target.matches('.sa-h')&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.target.click()}});
+let saTimer=0;
+document.addEventListener('input',e=>{const ed=e.target.closest&&e.target.closest('.sa-ed');if(!ed)return;clearTimeout(saTimer);saTimer=setTimeout(()=>suppSave(ed),400)});
+document.addEventListener('focusout',e=>{const ed=e.target.closest&&e.target.closest('.sa-ed');if(ed){clearTimeout(saTimer);suppSave(ed)}});
+document.addEventListener('paste',e=>{const ed=e.target.closest&&e.target.closest('.sa-ed');if(!ed)return;e.preventDefault();document.execCommand('insertText',false,(e.clipboardData||window.clipboardData).getData('text/plain'))});
 // ===== START UP: sets today as the calendar date, loads the spreadsheet rows into S.base, loads your saved data, draws the page. =====
 S.evd=todayS();
 S.base=BASE.map(a=>cl({uni:a[0],prog:a[1],code:a[2],dec:a[3],avg:a[4],raw:a[5],app:a[6],dd:a[7],grp:a[8],cit:a[9],prov:a[10],supp:a[11],sn:a[12],com:a[13],eng:false}));
