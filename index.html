@@ -265,7 +265,7 @@ nav .navdue .nd:hover{background:var(--gl)}
 .td-b textarea{min-height:6em}
 .td-due{font-size:.85em;opacity:.8}
 .td-late{color:#c0392b;font-weight:600}
-/* v10: Supp Apps editor */
+/* v10: Supplementary Applications editor */
 .sa{border:1px solid var(--glb);background:var(--gl2);border-radius:16px;margin-bottom:14px;overflow:hidden}
 .sa-h{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer}
 .sa-h:hover{background:var(--gl)}
@@ -440,8 +440,8 @@ const ontData=()=>allData().filter(isOnt);
 // When the newest "v" changes, a popup shows ONE time (only the newest entry is shown; older ones are just a record).
 // ===================================================================
 const PATCHES=[ 
- {v:'1.7',d:'2026-11-21',t:'Supp Apps page and offer celebration',b:[
-'New Supp Apps page: one expandable box per university with a supplementary application, with bold, italic and bullets.',
+ {v:'1.7',d:'2026-11-21',t:'Supplementary Applications page and offer celebration',b:[
+'New Supplementary Applications page: one expandable box per university with a supplementary application, with bold, italic and bullets.',
 'Setting an application to Offer now shows a congratulations message with fireworks for 5 seconds.']},
  {v:'1.6',d:'2026-11-18',t:'To-Do page',b:[
 'New To-Do page after Calendar. Type a task, click the arrow on the box to expand it for notes and a due date, then press Add.',
@@ -514,7 +514,7 @@ function setName(){const v=($('#wn').value||'').trim().replace(/\s+/g,' ').slice
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='wn')setName()});
 /* ---------- shell ---------- */
 // ===== SIDE PANEL ORDER + NAMES. Format  key:['Name shown',pageFunction]. Reorder by moving pairs; rename by editing the quoted name.  =====
-const PG={dash:['Dashboard',pDash],grades:['My Grades',pGrades],unis:['Universities',pUnis],progs:['Programs',pProgs],cmp:['Compare',pCmp],apps:['My Applications',pApps],ecs:['Extracurriculars',pEcs],supp:['Supp Apps',pSupp],data:['Application Data',pData],cal:['Calendar',pCal],todo:['To-Do',pTodo]};
+const PG={dash:['Dashboard',pDash],grades:['My Grades',pGrades],unis:['Universities',pUnis],progs:['Programs',pProgs],cmp:['Compare',pCmp],apps:['My Applications',pApps],ecs:['Extracurriculars',pEcs],supp:['Supplementary Applications',pSupp],data:['Application Data',pData],cal:['Calendar',pCal],todo:['To-Do',pTodo]};
 // ===== DRAW EVERYTHING: builds the side panel (names from PG + due dates + patch button) and the current page. =====
 function render(){document.body.classList.toggle('wel',!S.name);if(!S.name){$('#nav').innerHTML='';$('#app').innerHTML=pWelcome();const wn=$('#wn');if(wn)wn.focus();return}$('#nav').innerHTML='<div class="navlogo logo"><i></i>The Quad</div>'+Object.entries(PG).map(([k,v])=>`<button data-go="${k}" class="${S.page===k?'on':''}">${v[0]}</button>`).join('')+navBottom();$('#app').innerHTML=PG[S.page][1]();const dr=$('#drop');if(dr){const fi=$('#file');fi.onchange=()=>fi.files[0]&&readFile(fi.files[0]);dr.ondragover=e=>{e.preventDefault();dr.classList.add('ov')};dr.ondragleave=()=>dr.classList.remove('ov');dr.ondrop=e=>{e.preventDefault();dr.classList.remove('ov');e.dataTransfer.files[0]&&readFile(e.dataTransfer.files[0])}}const q=$('#q');if(q)q.oninput=()=>{S.f.q=q.value;S.pg=1;$('#tbl').innerHTML=tbl()};if(patchNew()&&!S.pmShown){S.pmShown=true;showPatchModal()}}
 const gid=t=>S.grades.find(g=>String(g.id)===t.dataset.id);
