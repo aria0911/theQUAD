@@ -287,20 +287,22 @@ nav .navdue .nd:hover{background:var(--gl)}
 .sa-ed ul{margin:6px 0 6px 22px;padding:0}
 /* Selected-text word count: appears only while text inside a Supp Apps editor is selected. */
 .sa-selection-count{position:fixed;z-index:1000;display:none;pointer-events:none;padding:6px 10px;border:1px solid var(--glb);border-radius:999px;background:var(--pn);color:var(--ink);box-shadow:0 5px 18px rgba(0,0,0,.16);font-size:12px;font-weight:700;white-space:nowrap}
-/* Expandable extracurricular references inside each supplementary-application workspace. */
-.sa-refs{margin:2px 0 14px;padding:12px;border:1px solid var(--glb);border-radius:12px;background:var(--gl2)}
-.sa-refs-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;font-weight:700}
-.sa-refs-count{font-size:12px;color:var(--mu);font-weight:500;white-space:nowrap}
-.sa-ref{border:1px solid var(--glb);border-radius:9px;background:var(--pn);margin-top:7px;overflow:hidden}
-.sa-ref summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;cursor:pointer;list-style:none}
-.sa-ref summary::-webkit-details-marker{display:none}
-.sa-ref summary:after{content:'+';color:var(--mu);font-size:17px;font-weight:600}
-.sa-ref[open] summary:after{content:'−'}
-.sa-ref-meta{color:var(--mu);font-size:12px;font-weight:500;text-align:right}
-.sa-ref-body{padding:0 12px 12px;border-top:1px solid var(--glb);font-size:13px;line-height:1.6;overflow-wrap:anywhere}
-.sa-ref-body p{margin:8px 0}
-.sa-ref-body ul{margin:7px 0 4px 20px;padding:0}
-.sa-refs-empty{color:var(--mu);font-size:13px;margin:0}
+/* Compact horizontal activity selector; the selected activity's full details appear underneath. */
+.sa-refs{margin:2px 0 14px;padding:10px 12px;border:1px solid var(--glb);border-radius:12px;background:var(--gl2)}
+.sa-refs-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;font-weight:700;font-size:13px}
+.sa-refs-count{font-size:11px;color:var(--mu);font-weight:500;white-space:nowrap}
+.sa-ref-list{display:flex;align-items:center;gap:7px;overflow-x:auto;padding:1px 1px 7px;scrollbar-width:thin}
+.sa-ref-choice{flex:0 0 auto;max-width:240px;border:1px solid var(--glb);border-radius:999px;padding:7px 11px;background:var(--pn);color:var(--ink);font:inherit;font-size:12px;line-height:1.25;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sa-ref-choice:hover{border-color:var(--em)}
+.sa-ref-choice.active{background:var(--gl);border-color:var(--em);color:var(--em);font-weight:750}
+.sa-ref-detail{margin-top:5px;padding:10px 12px;border:1px solid var(--glb);border-radius:9px;background:var(--pn);font-size:13px;line-height:1.55;overflow-wrap:anywhere}
+.sa-ref-detail[hidden]{display:none}
+.sa-ref-detail-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:7px;margin-bottom:6px;border-bottom:1px solid var(--glb)}
+.sa-ref-detail-title{font-weight:750}
+.sa-ref-meta{color:var(--mu);font-size:11px;font-weight:550;text-align:right}
+.sa-ref-body p{margin:6px 0}
+.sa-ref-body ul{margin:6px 0 4px 20px;padding:0}
+.sa-refs-empty{color:var(--mu);font-size:12px;margin:0}
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" onerror="window.XLSX=null"></script>
@@ -918,7 +920,8 @@ function suppClean(html){const doc=new DOMParser().parseFromString('<body>'+html
 const suppWords=el=>(el.innerText||'').trim().split(/\s+/).filter(Boolean).length;
 // Return the unique extracurriculars selected for supplementary-app applications at this university.
 function suppActivities(uid){const ids=[];S.apps.forEach(a=>{const p=a.pid&&pById(a.pid);if(!p||p.uid!==uid)return;const au=suppYN(p)[0],yn=a.sov==='Yes'||a.sov==='No'?a.sov:au;if(yn==='No')return;(a.ecs||[]).forEach(id=>{if(!ids.includes(id))ids.push(id)})});return ids.map(id=>S.ecs.find(e=>e.id===id)).filter(Boolean)}
-function suppActivityRefs(uid){const L=suppActivities(uid);return`<div class=\"sa-refs\"><div class=\"sa-refs-head\"><span>Activity references</span><span class=\"sa-refs-count\">${L.length} selected</span></div>${L.length?L.map(e=>`<details class=\"sa-ref\"><summary><b>${esc(e.t)}</b><span class=\"sa-ref-meta\">${esc(e.c)}${e.y?' · '+esc(e.y):''}</span></summary><div class=\"sa-ref-body\">${ecBody(e.b)}</div></details>`).join(''):'<p class=\"sa-refs-empty\">No activities selected for this university yet. Choose activities using the Activities button beside the relevant application in My Applications.</p>'}</div>`}
+S.saActivityOpen=S.saActivityOpen||{};
+function suppActivityRefs(uid){const L=suppActivities(uid),active=L.find(e=>e.id===S.saActivityOpen[uid]);return`<div class="sa-refs" data-sa-refs="${esc(uid)}"><div class="sa-refs-head"><span>Activity references</span><span class="sa-refs-count">${L.length} selected</span></div>${L.length?`<div class="sa-ref-list" role="group" aria-label="Select an activity reference">${L.map(e=>`<button type="button" class="sa-ref-choice ${active&&active.id===e.id?'active':''}" data-sa-activity="${esc(e.id)}" aria-expanded="${!!(active&&active.id===e.id)}" title="${esc(e.t)}">${esc(e.t)}</button>`).join('')}</div><div class="sa-ref-detail" ${active?'':'hidden'}>${active?`<div class="sa-ref-detail-head"><span class="sa-ref-detail-title">${esc(active.t)}</span><span class="sa-ref-meta">${esc(active.c)}${active.y?' · '+esc(active.y):''}</span></div><div class="sa-ref-body">${ecBody(active.b)}</div>`:''}</div>`:'<p class="sa-refs-empty">No activities selected for this university yet. Choose activities using the Activities button beside the relevant application in My Applications.</p>'}</div>`}
 function suppSelectionCount(){let pill=document.getElementById('sa-selection-count');if(!pill){pill=document.createElement('div');pill.id='sa-selection-count';pill.className='sa-selection-count';pill.setAttribute('aria-live','polite');document.body.appendChild(pill)}const sel=window.getSelection();if(!sel||sel.isCollapsed||!sel.rangeCount){pill.style.display='none';return}const a=sel.anchorNode,f=sel.focusNode,ed=a&&(a.nodeType===1?a:a.parentElement)?.closest('.sa-ed');if(!ed||!ed.contains(a)||!ed.contains(f)){pill.style.display='none';return}const selected=(sel.toString()||'').trim();if(!selected){pill.style.display='none';return}const n=selected.split(/\s+/).filter(Boolean).length,rect=sel.getRangeAt(0).getBoundingClientRect();pill.textContent=`${n} selected word${n===1?'':'s'}`;pill.style.display='block';const w=pill.offsetWidth,h=pill.offsetHeight;let left=rect.left+rect.width/2-w/2,top=rect.top-h-9;if(top<6)top=rect.bottom+9;left=Math.max(6,Math.min(left,window.innerWidth-w-6));top=Math.max(6,Math.min(top,window.innerHeight-h-6));pill.style.left=left+'px';pill.style.top=top+'px'}
 function suppSave(ed){const card=ed.closest('.sa');if(!card)return;const D=suppGet();D[card.dataset.said]=suppClean(ed.innerHTML);
  try{localStorage.setItem('tfc:supp',JSON.stringify(D))}catch(_){toast('Could not save \u2014 browser storage is full.')}
@@ -932,6 +935,7 @@ ${ids.length?ids.map(id=>{const g=by[id],html=suppClean(D[id]||''),shut=!!S.saSh
 <div class="sa-b"><div class="sa-tb"><button data-sa="bold" title="Bold (Ctrl+B)" aria-label="Bold"><b>B</b></button><button data-sa="ital" title="Italic (Ctrl+I)" aria-label="Italic"><i>I</i></button><button data-sa="ul" title="Bulleted list" aria-label="Bulleted list">\u2022 List</button></div>
 ${suppActivityRefs(id)}
 <div class="sa-ed" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Supplementary application notes for ${esc(g.uni)}" data-ph="Paste the supplementary questions here, bold them, then write your answers underneath.">${html}</div></div></div>`}).join(''):'<div class="pnl"><p class="note">No supplementary applications yet. Add programs on My Applications. Any program whose \u201cSupp app?\u201d is not \u201cNo\u201d gets a box here automatically.</p></div>'}`}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-sa-activity]');if(!b)return;const wrap=b.closest('[data-sa-refs]');if(!wrap)return;const uid=wrap.dataset.saRefs,id=b.dataset.saActivity;S.saActivityOpen[uid]=S.saActivityOpen[uid]===id?'':id;const selected=S.ecs.find(x=>x.id===S.saActivityOpen[uid]);wrap.querySelectorAll('[data-sa-activity]').forEach(x=>{const on=x.dataset.saActivity===S.saActivityOpen[uid];x.classList.toggle('active',on);x.setAttribute('aria-expanded',String(on))});const panel=wrap.querySelector('.sa-ref-detail');if(!selected){panel.hidden=true;panel.innerHTML='';return}panel.hidden=false;panel.innerHTML=`<div class="sa-ref-detail-head"><span class="sa-ref-detail-title">${esc(selected.t)}</span><span class="sa-ref-meta">${esc(selected.c)}${selected.y?' · '+esc(selected.y):''}</span></div><div class="sa-ref-body">${ecBody(selected.b)}</div>`});
 document.addEventListener('mousedown',e=>{const b=e.target.closest('[data-sa]');if(b&&b.dataset.sa!=='tog')e.preventDefault()});
 document.addEventListener('click',e=>{const t=e.target.closest('[data-sa]');if(!t)return;const a=t.dataset.sa,c=t.closest('.sa');if(!c)return;
  if(a==='tog'){const o=!c.classList.contains('open');c.classList.toggle('open',o);t.setAttribute('aria-expanded',o);if(o)delete S.saShut[c.dataset.said];else S.saShut[c.dataset.said]=1;return}
